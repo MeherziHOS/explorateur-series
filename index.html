@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Mon explorateur de séries</title>
+        <link rel="stylesheet" href="./src/style.css" />
+    </head>
+    <body>
+        <header class="entete">
+            <h1>Mon explorateur de séries</h1>
+            <p class="slogan">Cherchez une série, ouvrez sa fiche et gardez vos préférées.</p>
+        </header>
+
+        <main class="page">
+            <div class="contenu">
+                <form id="form-recherche" class="recherche" role="search">
+                    <label for="champ-recherche">Titre d'une série</label>
+                    <div class="recherche-ligne">
+                        <input
+                            type="search"
+                            id="champ-recherche"
+                            name="recherche"
+                            placeholder="Par exemple : Lupin"
+                            autocomplete="off"
+                            required
+                        />
+                        <button type="submit" class="bouton bouton-principal">Rechercher</button>
+                    </div>
+                </form>
+
+                <!-- Tri des résultats : sert à partir de la fiche 2 (retirez alors l'attribut hidden) -->
+                <div id="outils" class="outils" hidden>
+                    <label for="choix-tri">Trier par</label>
+                    <select id="choix-tri">
+                        <option value="pertinence">pertinence</option>
+                        <option value="titre">titre (de A à Z)</option>
+                        <option value="note">note (la meilleure d'abord)</option>
+                    </select>
+                </div>
+
+                <!-- Messages : nombre de résultats, chargement, erreurs (lus par les lecteurs d'écran) -->
+                <p id="zone-message" class="message" role="status"></p>
+
+                <!-- Fiche détaillée d'une série : remplie par JavaScript -->
+                <section
+                    id="zone-detail"
+                    class="detail"
+                    aria-labelledby="detail-titre"
+                    hidden
+                ></section>
+
+                <section class="resultats" aria-labelledby="resultats-titre">
+                    <h2 id="resultats-titre">Résultats</h2>
+                    <div id="zone-resultats" class="grille"></div>
+                </section>
+            </div>
+
+            <!-- Favoris : servent à partir de la fiche 2 (retirez alors l'attribut hidden) -->
+            <aside id="favoris" class="favoris" aria-labelledby="favoris-titre" hidden>
+                <h2 id="favoris-titre">Mes favoris</h2>
+                <ul id="zone-favoris" class="liste-favoris"></ul>
+            </aside>
+        </main>
+
+        <footer class="pied">
+            <p>
+                Données :
+                <a href="https://www.tvmaze.com/" target="_blank" rel="noopener">TVmaze</a>
+                (licence CC BY-SA). Projet pédagogique.
+            </p>
+        </footer>
+
+        <script src="./src/donnees.js"></script>
+        <script src="./src/app.js"></script>
+    </body>
+</html>

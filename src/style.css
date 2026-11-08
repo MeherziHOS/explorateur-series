@@ -1,0 +1,370 @@
+/* =========================================================
+   Mon explorateur de séries : feuille de style (fournie)
+   Vous n'avez pas à la modifier : les fiches portent sur JavaScript.
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --fond: #141821;
+    --surface: #1d2330;
+    --surface-claire: #2a3246;
+    --bordure: #3a4356;
+    --texte: #e8ecf3;
+    --texte-doux: #b4bccb;
+    --accent: #ffd166;
+    --accent-fonce: #f5b82e;
+    --erreur: #ff8a8a;
+    --succes: #7ee0a8;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, Arial, sans-serif;
+    line-height: 1.5;
+    background-color: var(--fond);
+    color: var(--texte);
+}
+
+a {
+    color: var(--accent);
+}
+
+:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ===== En-tête et pied de page ===== */
+.entete {
+    padding: 32px 16px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--surface), var(--surface-claire));
+    border-bottom: 1px solid var(--bordure);
+}
+
+.entete h1 {
+    margin: 0 0 6px;
+    font-size: 2rem;
+    color: var(--accent);
+}
+
+.slogan {
+    margin: 0;
+    color: var(--texte-doux);
+}
+
+.pied {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--texte-doux);
+    border-top: 1px solid var(--bordure);
+}
+
+/* ===== Mise en page : contenu + favoris ===== */
+.page {
+    display: grid;
+    gap: 24px;
+    max-width: 1150px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+}
+
+@media (min-width: 900px) {
+    .page {
+        grid-template-columns: 1fr 280px;
+        align-items: start;
+    }
+}
+
+h2 {
+    margin: 0 0 12px;
+    font-size: 1.3rem;
+}
+
+/* ===== Recherche et tri ===== */
+.recherche label,
+.outils label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.recherche-ligne {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+input[type="search"],
+select {
+    padding: 10px 14px;
+    font: inherit;
+    color: var(--texte);
+    background-color: var(--surface);
+    border: 2px solid var(--bordure);
+    border-radius: 8px;
+}
+
+input[type="search"] {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+input::placeholder {
+    color: #9aa3b5;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--accent);
+}
+
+.outils {
+    margin-top: 16px;
+}
+
+/* ===== Boutons ===== */
+.bouton {
+    padding: 8px 14px;
+    font: inherit;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.bouton-principal {
+    color: #141821;
+    background-color: var(--accent);
+}
+
+.bouton-principal:hover {
+    background-color: var(--accent-fonce);
+}
+
+.bouton-secondaire {
+    color: var(--texte);
+    background-color: var(--surface-claire);
+    border-color: var(--bordure);
+}
+
+.bouton-secondaire:hover {
+    border-color: var(--accent);
+}
+
+.bouton:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+/* ===== Messages ===== */
+.message {
+    min-height: 1.5em;
+    margin: 16px 0;
+    color: var(--texte-doux);
+}
+
+.message.erreur {
+    padding: 10px 14px;
+    color: var(--erreur);
+    background-color: #2b1d24;
+    border-left: 4px solid var(--erreur);
+    border-radius: 6px;
+}
+
+/* Indicateur de chargement : trois points animés (fiche 4).
+   @keyframes et animation : code fourni, à lire sans l'apprendre. */
+.message.chargement::after {
+    content: "...";
+    display: inline-block;
+    width: 0;
+    overflow: hidden;
+    vertical-align: bottom;
+    animation: points 1.2s steps(4, end) infinite;
+}
+
+@keyframes points {
+    to {
+        width: 1.25em;
+    }
+}
+
+/* Personnes sensibles aux animations (réglage du système) : on coupe l'animation */
+@media (prefers-reduced-motion: reduce) {
+    .message.chargement::after {
+        width: auto;
+        animation: none;
+    }
+}
+
+/* ===== Grille de cartes ===== */
+.grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 18px;
+}
+
+.carte {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: var(--surface);
+    border: 1px solid var(--bordure);
+    border-radius: 10px;
+}
+
+.carte-affiche {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    background-color: var(--surface-claire);
+}
+
+.sans-affiche {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--texte-doux);
+}
+
+.carte-corps {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 12px;
+}
+
+.carte-titre {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.carte-infos,
+.carte-note {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--texte-doux);
+}
+
+.carte-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+/* ===== Fiche détaillée ===== */
+.detail {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 28px;
+    padding: 18px;
+    background-color: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+}
+
+.detail[hidden] {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .detail {
+        grid-template-columns: 210px 1fr;
+    }
+}
+
+.detail-affiche {
+    width: 100%;
+    max-width: 210px;
+    border-radius: 8px;
+}
+
+.detail h2 {
+    color: var(--accent);
+}
+
+.detail h3 {
+    margin: 16px 0 6px;
+    font-size: 1.05rem;
+}
+
+.detail-infos {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 14px;
+    margin: 0;
+}
+
+.detail-infos dt {
+    font-weight: 600;
+    color: var(--texte-doux);
+}
+
+.detail-infos dd {
+    margin: 0;
+}
+
+.detail-resume {
+    margin: 12px 0 0;
+}
+
+.detail-distribution {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* ===== Favoris ===== */
+.favoris {
+    padding: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--bordure);
+    border-radius: 12px;
+}
+
+.favoris[hidden] {
+    display: none;
+}
+
+.liste-favoris {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.liste-favoris li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px 10px;
+    background-color: var(--surface-claire);
+    border-radius: 8px;
+}
+
+.liste-favoris .vide {
+    color: var(--texte-doux);
+    background: none;
+    padding: 0;
+}
+
+.liste-favoris .bouton {
+    padding: 4px 10px;
+    font-size: 0.85rem;
+}
