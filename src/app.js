@@ -13,6 +13,12 @@ const champRecherche = document.querySelector("#champ-recherche");
 const zoneMessage = document.querySelector("#zone-message");
 const zoneDetail = document.querySelector("#zone-detail");
 const zoneResultats = document.querySelector("#zone-resultats");
+const choixTri = document.querySelector("#choix-tri");
+const zoneFavoris = document.querySelector("#zone-favoris");
+const favoristitre = document.querySelector("#favoris-titre");
+
+let resultatsCourants = series;
+let favoris = [];
 
 // Statuts de TVmaze traduits en français
 const STATUTS = {
@@ -21,7 +27,69 @@ const STATUTS = {
     "To Be Determined": "Suite incertaine",
     "In Development": "En préparation",
 };
+function journaliser(action, ...details) {
+    console.log("[Explorateur]", action, ...details);
+}
+// Vérifier si une série est dans les favoris
+function estFavori(liste, idSerie) {
+    return liste.some((serie) => serie.id === idSerie);
+}
 
+// Ajouter une série sans modifier le tableau original
+function ajouterAuxFavoris(liste, serie) {
+    if (estFavori(liste, serie.id)) {
+        return liste;
+    }
+
+    const { summary, ...serieLegere } = serie;
+    return [...liste, serieLegere];
+}
+
+// Retirer une série sans modifier le tableau original
+function retirerDesFavoris(liste, idSerie) {
+    return liste.filter((serie) => serie.id !== idSerie);
+}
+
+function trierSeries(liste, critere) {
+    if (critere === "titre") {
+        return [...liste].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    if (critere === "note") {
+        return [...liste].sort((a, b) => (b.rating.average ?? 0) - (a.rating.average ?? 0));
+    }
+
+    return [...liste];
+}
+function afficherFavoris() {
+    zoneFavoris.replaceChildren();
+
+    if (favoris.length === 0) {
+        const message = document.createElement("p");
+        message.textContent = "Aucune série favorite pour le moment.";
+        zoneFavoris.append(message);
+        return;
+    }
+
+    favoris.forEach(({ id, name }) => {
+        const ligne = document.createElement("div");
+        ligne.className = "favori-ligne";
+
+        const titre = document.createElement("span");
+        titre.textContent = name;
+
+        const bouton = document.createElement("button");
+        bouton.type = "button";
+        bouton.className = "bouton bouton-secondaire";
+        bouton.dataset.action = "retirer-favori";
+        bouton.dataset.id = id;
+        bouton.textContent = "Retirer";
+        bouton.setAttribute("aria-label", `Retirer ${name} des favoris`);
+
+        ligne.append(titre, bouton);
+        zoneFavoris.append(ligne);
+    });
+}
 // ===== Petites fonctions utiles =====
 
 // "2005-01-03" → "2005"
@@ -104,7 +172,17 @@ function creerCarteSerie({ id, name: titre, genres, rating: { average: note }, i
     boutonDetail.textContent = "Voir la fiche";
     boutonDetail.setAttribute("aria-label", `Voir la fiche de ${titre}`);
 
-    actions.append(boutonDetail);
+    const boutonFavori = document.createElement("button");
+    boutonFavori.type = "button";
+    boutonFavori.className = "bouton bouton-secondaire";
+    boutonFavori.dataset.action = "favori";
+    boutonFavori.dataset.id = id;
+
+    const dejaFavori = estFavori(favoris, id);
+    boutonFavori.textContent = dejaFavori ? "★ Retirer des favoris" : "☆ Ajouter aux favoris";
+
+    boutonFavori.setAttribute("aria-pressed", String(dejaFavori));
+    actions.append(boutonDetail, boutonFavori);
     corps.append(titreCarte, infos, texteNote, actions);
     carte.append(corps);
     return carte;
@@ -250,18 +328,62 @@ formRecherche.addEventListener("submit", (event) => {
     event.preventDefault();
     const terme = champRecherche.value.trim().toLowerCase();
     const resultats = series.filter((serie) => serie.name.toLowerCase().includes(terme));
-    afficherSeries(resultats);
+    resultatsCourants = resultats;
+    afficherSeries(trierSeries(resultatsCourants, choixTri.value));
 });
 
 // Délégation : un seul écouteur pour tous les boutons « Voir la fiche » de la grille
+// Gérer les clics sur les boutons des cartes
 zoneResultats.addEventListener("click", (event) => {
     const bouton = event.target.closest("button[data-action]");
+
     if (!bouton) {
         return;
     }
+
+    const idSerie = Number(bouton.dataset.id);
+
     if (bouton.dataset.action === "detail") {
-        ouvrirDetail(Number(bouton.dataset.id));
+        ouvrirDetail(idSerie);
     }
+
+    if (bouton.dataset.action === "favori") {
+        const serie = series.find((s) => s.id === idSerie);
+
+        if (!serie) {
+            return;
+        }
+
+        if (estFavori(favoris, idSerie)) {
+            favoris = retirerDesFavoris(favoris, idSerie);
+            journaliser("Favori retiré", serie.name);
+        } else {
+            favoris = ajouterAuxFavoris(favoris, serie);
+            journaliser("Favori ajouté", serie.name);
+        }
+
+        afficherSeries(trierSeries(resultatsCourants, choixTri.value));
+        afficherFavoris();
+    }
+});
+// Gérer le clic sur le bouton "Retirer" dans la liste des favoris
+zoneFavoris.addEventListener("click", (event) => {
+    const bouton = event.target.closest('button[data-action="retirer-favori"]');
+
+    if (!bouton) {
+        return;
+    }
+
+    const idSerie = Number(bouton.dataset.id);
+
+    favoris = retirerDesFavoris(favoris, idSerie);
+
+    afficherFavoris();
+    afficherSeries(trierSeries(resultatsCourants, choixTri.value));
+
+    journaliser("Favori retiré", idSerie);
+
+    favorisTitre.focus();
 });
 
 zoneDetail.addEventListener("click", (event) => {
@@ -271,4 +393,16 @@ zoneDetail.addEventListener("click", (event) => {
 });
 
 // ===== Démarrage : on affiche toutes les séries du jeu de données =====
+// Réagir au changement de tri
+choixTri.addEventListener("change", () => {
+    const critere = choixTri.value;
+
+    const listeTriee = trierSeries(resultatsCourants, critere);
+
+    afficherSeries(listeTriee);
+
+    journaliser("Tri effectué", critere);
+});
+
 afficherSeries(series);
+afficherFavoris();
