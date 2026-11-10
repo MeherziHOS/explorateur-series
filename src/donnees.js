@@ -1,10 +1,8 @@
 // Jeu de données local : 10 séries au format de l'API TVmaze (https://www.tvmaze.com/api).
 // Extrait de vraies réponses de l'API (13/10/2026), réduit aux propriétés utiles.
 // Données TVmaze sous licence CC BY-SA 4.0 : https://creativecommons.org/licenses/by-sa/4.0/
-// Remarquez les valeurs null : une série sans note (rating.average), sans résumé (summary),
-// sans date de fin (ended), diffusée par une chaîne (network) ou par une plateforme (webChannel).
 
-const series = [
+export const series = [
     {
         id: 7092,
         name: "Kaamelott",
@@ -209,7 +207,7 @@ const series = [
 
 // Distribution (4 premiers rôles au plus), rangée par identifiant de série.
 // Deux séries n'ont pas de distribution dans ce jeu de données.
-const distributions = {
+export const distributions = {
     335: [
         {
             person: { name: "Benedict Cumberbatch" },
