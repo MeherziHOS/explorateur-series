@@ -37,12 +37,33 @@ export function texteSansBalises(html) {
     const documentLu = new DOMParser().parseFromString(html, "text/html");
     return documentLu.body.textContent;
 }
+
+export function afficherChargement(texte) {
+    const zoneMessage = document.querySelector("#zone-message");
+
+    zoneMessage.classList.add("chargement");
+    zoneMessage.classList.remove("erreur");
+    zoneMessage.textContent = texte;
+}
 // Affiche un message dans la zone prévue (role="status" : lu par les lecteurs d'écran)
 export function afficherMessage(texte) {
     const zoneMessage = document.querySelector("#zone-message");
+    zoneMessage.classList.remove("chargement");
+    zoneMessage.classList.remove("erreur");
     zoneMessage.textContent = texte;
 }
+export function afficherErreur(texte) {
+    const zoneMessage = document.querySelector("#zone-message");
 
+    zoneMessage.classList.remove("chargement");
+    zoneMessage.classList.add("erreur");
+    zoneMessage.textContent = texte;
+}
+export function marquerOccupe(occupe) {
+    const zoneResultats = document.querySelector("#zone-resultats");
+
+    zoneResultats.setAttribute("aria-busy", String(occupe));
+}
 // Construire une carte de série sans utiliser innerHTML
 export function creerCarteSerie(
     { id, name: titre, genres, rating: { average: note }, image, premiered },

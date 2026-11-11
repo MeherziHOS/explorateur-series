@@ -1,4 +1,13 @@
-import { afficherSeries, afficherDetail, fermerDetail, afficherFavoris } from "./dom.js";
+import {
+    afficherSeries,
+    afficherDetail,
+    fermerDetail,
+    afficherFavoris,
+    afficherMessage,
+    afficherChargement,
+    afficherErreur,
+    marquerOccupe,
+} from "./dom.js";
 import { rechercherSeries, chargerSerie, chargerDistribution } from "./api.js";
 import { initialiserEvenements } from "./events.js";
 import { estFavori, ajouterAuxFavoris, retirerDesFavoris } from "./favoris.js";
@@ -6,7 +15,7 @@ import { estFavori, ajouterAuxFavoris, retirerDesFavoris } from "./favoris.js";
 // État de l'application
 const choixTri = document.querySelector("#choix-tri");
 
-let resultatsCourants = rechercherSeries("");
+let resultatsCourants = [];
 let favoris = [];
 
 // Journalisation des actions
@@ -29,17 +38,44 @@ function trierSeries(liste, critere) {
 
 // Ouvrir la fiche détaillée d'une série
 function ouvrirDetail(idSerie) {
-    const serie = chargerSerie(idSerie);
-    const distribution = chargerDistribution(idSerie);
+    afficherChargement("Chargement de la fiche...");
 
-    afficherDetail(serie, distribution);
+    chargerSerie(idSerie)
+        .then((serie) => {
+            return chargerDistribution(idSerie).then((distribution) => {
+                afficherDetail(serie, distribution);
+                afficherMessage("");
+            });
+        })
+        .catch((erreur) => {
+            afficherErreur(erreur.message);
+        })
+        .finally(() => {
+            marquerOccupe(false);
+        });
 }
 
 // Relier les événements aux fonctionnalités
 initialiserEvenements({
     surRecherche: (terme) => {
-        resultatsCourants = rechercherSeries(terme);
-        afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+        afficherChargement("Recherche en cours...");
+        marquerOccupe(true);
+
+        rechercherSeries(terme)
+            .then((resultats) => {
+                resultatsCourants = resultats;
+
+                afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+
+                afficherMessage("");
+                journaliser("Recherche effectuée", terme);
+            })
+            .catch((erreur) => {
+                afficherErreur(erreur.message);
+            })
+            .finally(() => {
+                marquerOccupe(false);
+            });
     },
 
     surTri: (critere) => {
@@ -53,22 +89,22 @@ initialiserEvenements({
     },
 
     surFavori: (idSerie) => {
-        const serie = chargerSerie(idSerie);
+        chargerSerie(idSerie)
+            .then((serie) => {
+                if (estFavori(favoris, idSerie)) {
+                    favoris = retirerDesFavoris(favoris, idSerie);
+                    journaliser("Favori retiré", serie.name);
+                } else {
+                    favoris = ajouterAuxFavoris(favoris, serie);
+                    journaliser("Favori ajouté", serie.name);
+                }
 
-        if (!serie) {
-            return;
-        }
-
-        if (estFavori(favoris, idSerie)) {
-            favoris = retirerDesFavoris(favoris, idSerie);
-            journaliser("Favori retiré", serie.name);
-        } else {
-            favoris = ajouterAuxFavoris(favoris, serie);
-            journaliser("Favori ajouté", serie.name);
-        }
-
-        afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
-        afficherFavoris(favoris);
+                afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+                afficherFavoris(favoris);
+            })
+            .catch((erreur) => {
+                afficherErreur(erreur.message);
+            });
     },
 
     surFermer: () => {
@@ -77,5 +113,22 @@ initialiserEvenements({
 });
 
 // Affichage initial
-afficherSeries(rechercherSeries(""), favoris);
+afficherChargement("Chargement des séries...");
+marquerOccupe(true);
+
+rechercherSeries("")
+    .then((resultats) => {
+        resultatsCourants = resultats;
+
+        afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+
+        afficherMessage("");
+    })
+    .catch((erreur) => {
+        afficherErreur(erreur.message);
+    })
+    .finally(() => {
+        marquerOccupe(false);
+    });
+
 afficherFavoris(favoris);
