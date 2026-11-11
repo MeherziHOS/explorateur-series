@@ -37,45 +37,46 @@ function trierSeries(liste, critere) {
 }
 
 // Ouvrir la fiche détaillée d'une série
-function ouvrirDetail(idSerie) {
+async function ouvrirDetail(idSerie) {
     afficherChargement("Chargement de la fiche...");
 
-    chargerSerie(idSerie)
-        .then((serie) => {
-            return chargerDistribution(idSerie).then((distribution) => {
-                afficherDetail(serie, distribution);
-                afficherMessage("");
-            });
-        })
-        .catch((erreur) => {
-            afficherErreur(erreur.message);
-        })
-        .finally(() => {
-            marquerOccupe(false);
-        });
+    try {
+        const [serie, distribution] = await Promise.all([
+            chargerSerie(idSerie),
+            chargerDistribution(idSerie),
+        ]);
+
+        afficherMessage("");
+        afficherDetail(serie, distribution);
+    } catch (erreur) {
+        afficherErreur(erreur.message);
+    } finally {
+        marquerOccupe(false);
+    }
 }
 
 // Relier les événements aux fonctionnalités
 initialiserEvenements({
-    surRecherche: (terme) => {
+    surRecherche: async (terme) => {
         afficherChargement("Recherche en cours...");
         marquerOccupe(true);
 
-        rechercherSeries(terme)
-            .then((resultats) => {
-                resultatsCourants = resultats;
+        try {
+            const resultats = await rechercherSeries(terme);
 
-                afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+            resultatsCourants = resultats;
 
-                afficherMessage("");
-                journaliser("Recherche effectuée", terme);
-            })
-            .catch((erreur) => {
-                afficherErreur(erreur.message);
-            })
-            .finally(() => {
-                marquerOccupe(false);
-            });
+            afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+
+            afficherMessage("");
+            journaliser("Recherche effectuée", terme);
+        } catch (erreur) {
+            resultatsCourants = [];
+            afficherSeries([], favoris);
+            afficherErreur(erreur.message);
+        } finally {
+            marquerOccupe(false);
+        }
     },
 
     surTri: (critere) => {
@@ -88,23 +89,24 @@ initialiserEvenements({
         ouvrirDetail(idSerie);
     },
 
-    surFavori: (idSerie) => {
-        chargerSerie(idSerie)
-            .then((serie) => {
-                if (estFavori(favoris, idSerie)) {
-                    favoris = retirerDesFavoris(favoris, idSerie);
-                    journaliser("Favori retiré", serie.name);
-                } else {
-                    favoris = ajouterAuxFavoris(favoris, serie);
-                    journaliser("Favori ajouté", serie.name);
-                }
+    surFavori: async (idSerie) => {
+        try {
+            const serie = await chargerSerie(idSerie);
 
-                afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
-                afficherFavoris(favoris);
-            })
-            .catch((erreur) => {
-                afficherErreur(erreur.message);
-            });
+            if (estFavori(favoris, idSerie)) {
+                favoris = retirerDesFavoris(favoris, idSerie);
+                journaliser("Favori retiré", serie.name);
+            } else {
+                favoris = ajouterAuxFavoris(favoris, serie);
+                journaliser("Favori ajouté", serie.name);
+            }
+
+            afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
+
+            afficherFavoris(favoris);
+        } catch (erreur) {
+            afficherErreur(erreur.message);
+        }
     },
 
     surFermer: () => {
@@ -113,22 +115,25 @@ initialiserEvenements({
 });
 
 // Affichage initial
-afficherChargement("Chargement des séries...");
-marquerOccupe(true);
+async function initialiserApplication() {
+    afficherChargement("Chargement des séries...");
+    marquerOccupe(true);
 
-rechercherSeries("")
-    .then((resultats) => {
+    try {
+        const resultats = await rechercherSeries("");
+
         resultatsCourants = resultats;
 
         afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
 
         afficherMessage("");
-    })
-    .catch((erreur) => {
+    } catch (erreur) {
         afficherErreur(erreur.message);
-    })
-    .finally(() => {
+    } finally {
         marquerOccupe(false);
-    });
+    }
 
-afficherFavoris(favoris);
+    afficherFavoris(favoris);
+}
+
+initialiserApplication();

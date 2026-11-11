@@ -1,50 +1,45 @@
 // Importer les données locales des séries
 import { series, distributions } from "./donnees.js";
 const DELAI = 800;
+function attendre(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
 
 // Rechercher les séries par titre
-export function rechercherSeries(terme) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const recherche = terme.trim().toLowerCase();
+export async function rechercherSeries(terme) {
+    await attendre(DELAI);
 
-            if (recherche === "panne") {
-                reject(new Error("Le serveur ne répond pas (panne simulée)."));
-                return;
-            }
+    const recherche = terme.trim().toLowerCase();
 
-            const resultats = series.filter((serie) =>
-                serie.name.toLowerCase().includes(recherche),
-            );
+    if (recherche === "panne") {
+        throw new Error("Le serveur ne répond pas (panne simulée).");
+    }
 
-            resolve(resultats);
-        }, DELAI);
-    });
+    const resultats = series.filter((serie) => serie.name.toLowerCase().includes(recherche));
+
+    return resultats;
 }
 
 // Récupérer une série grâce à son identifiant
-export function chargerSerie(idSerie) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const serie = series.find((serie) => serie.id === idSerie);
+export async function chargerSerie(idSerie) {
+    await attendre(DELAI);
 
-            if (!serie) {
-                reject(new Error("Cette série est introuvable."));
-                return;
-            }
+    const serie = series.find((serie) => serie.id === idSerie);
 
-            resolve(serie);
-        }, DELAI);
-    });
+    if (!serie) {
+        throw new Error("Cette série est introuvable.");
+    }
+
+    return serie;
 }
 
 // Récupérer les acteurs d'une série
-export function chargerDistribution(idSerie) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const acteurs = distributions[idSerie] || [];
+export async function chargerDistribution(idSerie) {
+    await attendre(DELAI);
 
-            resolve(acteurs);
-        }, DELAI);
-    });
+    const acteurs = distributions[idSerie] || [];
+
+    return acteurs;
 }
