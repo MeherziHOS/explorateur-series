@@ -1,45 +1,73 @@
 // Importer les données locales des séries
 import { series, distributions } from "./donnees.js";
-const DELAI = 800;
+
+const URL_API = "https://api.tvmaze.com";
+const MODE_DEMO = false;
+const DELAI_DEMO = 800;
 function attendre(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
 }
+// Lire les données JSON depuis l'API TVmaze
+async function lireJSON(chemin) {
+    const reponse = await fetch(URL_API + chemin);
+
+    if (!reponse.ok) {
+        throw new Error(`TVmaze a répondu avec le code ${reponse.status}`);
+    }
+
+    return reponse.json();
+}
 
 // Rechercher les séries par titre
 export async function rechercherSeries(terme) {
-    await attendre(DELAI);
-
     const recherche = terme.trim().toLowerCase();
 
-    if (recherche === "panne") {
-        throw new Error("Le serveur ne répond pas (panne simulée).");
+    if (MODE_DEMO) {
+        await attendre(DELAI_DEMO);
+
+        if (recherche === "panne") {
+            throw new Error("Le serveur ne répond pas (panne simulée).");
+        }
+
+        return series.filter((serie) => serie.name.toLowerCase().includes(recherche));
     }
 
-    const resultats = series.filter((serie) => serie.name.toLowerCase().includes(recherche));
+    const donnees = await lireJSON(`/search/shows?q=${encodeURIComponent(recherche)}`);
 
-    return resultats;
+    return donnees.map(({ show }) => show);
 }
 
 // Récupérer une série grâce à son identifiant
 export async function chargerSerie(idSerie) {
-    await attendre(DELAI);
+    if (MODE_DEMO) {
+        await attendre(DELAI_DEMO);
 
-    const serie = series.find((serie) => serie.id === idSerie);
+        const serie = series.find((serie) => serie.id === idSerie);
 
-    if (!serie) {
-        throw new Error("Cette série est introuvable.");
+        if (!serie) {
+            throw new Error("Cette série est introuvable.");
+        }
+
+        return serie;
     }
 
-    return serie;
+    return lireJSON(`/shows/${idSerie}`);
 }
 
 // Récupérer les acteurs d'une série
 export async function chargerDistribution(idSerie) {
-    await attendre(DELAI);
+    if (MODE_DEMO) {
+        await attendre(DELAI_DEMO);
 
-    const acteurs = distributions[idSerie] || [];
+        return distributions[idSerie] || [];
+    }
 
-    return acteurs;
+    const donnees = await lireJSON(`/shows/${idSerie}/cast`);
+
+    return donnees.map(({ person, character }) => ({
+        person,
+        character,
+    }));
 }

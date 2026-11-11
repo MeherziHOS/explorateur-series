@@ -23,7 +23,7 @@ export function extraireAnnee(date) {
 
 // ["Drama", "Comedy"] → "Drama, Comedy"
 export function texteGenres(genres) {
-    if (genres.length === 0) {
+    if (!genres || genres.length === 0) {
         return "Genre non précisé";
     }
     return genres.join(", ");
@@ -66,7 +66,7 @@ export function marquerOccupe(occupe) {
 }
 // Construire une carte de série sans utiliser innerHTML
 export function creerCarteSerie(
-    { id, name: titre, genres, rating: { average: note }, image, premiered },
+    { id, name: titre, genres, rating: { average: note } = {}, image, premiered },
     favoris,
 ) {
     const annee = extraireAnnee(premiered);
@@ -100,7 +100,7 @@ export function creerCarteSerie(
 
     const texteNote = document.createElement("p");
     texteNote.className = "carte-note";
-    texteNote.textContent = note !== null ? `★ ${note} / 10` : "Pas encore notée";
+    texteNote.textContent = note != null ? `★ ${note} / 10` : "Pas encore notée";
 
     const actions = document.createElement("div");
     actions.className = "carte-actions";
@@ -163,7 +163,7 @@ export function afficherDetail(
         status,
         network,
         webChannel,
-        rating: { average: note },
+        rating: { average: note } = {},
         image,
         summary,
     },
@@ -204,7 +204,7 @@ export function afficherDetail(
     ajouterInfo(infos, "Statut", STATUTS[status] || status);
     ajouterInfo(infos, "Diffusion", diffuseur);
     ajouterInfo(infos, "Genres", texteGenres(genres));
-    ajouterInfo(infos, "Note", note !== null ? `${note} / 10` : "Pas encore notée");
+    ajouterInfo(infos, "Note", note != null ? `${note} / 10` : "Pas encore notée");
 
     const resume = document.createElement("p");
     resume.className = "detail-resume";

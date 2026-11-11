@@ -58,6 +58,12 @@ async function ouvrirDetail(idSerie) {
 // Relier les événements aux fonctionnalités
 initialiserEvenements({
     surRecherche: async (terme) => {
+        if (!terme.trim()) {
+            resultatsCourants = [];
+            afficherSeries([], favoris);
+            afficherMessage("Saisissez un titre de série pour commencer.");
+            return;
+        }
         afficherChargement("Recherche en cours...");
         marquerOccupe(true);
 
@@ -115,25 +121,14 @@ initialiserEvenements({
 });
 
 // Affichage initial
-async function initialiserApplication() {
-    afficherChargement("Chargement des séries...");
-    marquerOccupe(true);
+function initialiserApplication() {
+    resultatsCourants = [];
 
-    try {
-        const resultats = await rechercherSeries("");
-
-        resultatsCourants = resultats;
-
-        afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
-
-        afficherMessage("");
-    } catch (erreur) {
-        afficherErreur(erreur.message);
-    } finally {
-        marquerOccupe(false);
-    }
-
+    afficherSeries([], favoris);
     afficherFavoris(favoris);
+
+    afficherMessage("Saisissez un titre de série pour commencer.");
+    marquerOccupe(false);
 }
 
 initialiserApplication();
