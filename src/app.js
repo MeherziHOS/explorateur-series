@@ -10,13 +10,19 @@ import {
 } from "./dom.js";
 import { rechercherSeries, chargerSerie, chargerDistribution } from "./api.js";
 import { initialiserEvenements } from "./events.js";
-import { estFavori, ajouterAuxFavoris, retirerDesFavoris } from "./favoris.js";
+import {
+    estFavori,
+    ajouterAuxFavoris,
+    retirerDesFavoris,
+    chargerFavoris,
+    sauvegarderFavoris,
+} from "./favoris.js";
 
 // État de l'application
 const choixTri = document.querySelector("#choix-tri");
 
 let resultatsCourants = [];
-let favoris = [];
+let favoris = chargerFavoris();
 
 // Journalisation des actions
 function journaliser(action, ...details) {
@@ -106,6 +112,7 @@ initialiserEvenements({
                 favoris = ajouterAuxFavoris(favoris, serie);
                 journaliser("Favori ajouté", serie.name);
             }
+            sauvegarderFavoris(favoris);
 
             afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
 

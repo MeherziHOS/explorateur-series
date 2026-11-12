@@ -9,12 +9,38 @@ function attendre(ms) {
         setTimeout(resolve, ms);
     });
 }
+// Transformer les codes HTTP en messages compréhensibles
+function messageErreurHTTP(statut) {
+    if (statut === 404) {
+        return "Série introuvable.";
+    }
+
+    if (statut === 429) {
+        return "Trop de requêtes. Réessayez dans quelques secondes.";
+    }
+
+    if (statut >= 500) {
+        return "TVmaze rencontre un problème. Réessayez plus tard.";
+    }
+
+    return `Erreur HTTP : ${statut}`;
+}
 // Lire les données JSON depuis l'API TVmaze
 async function lireJSON(chemin) {
-    const reponse = await fetch(URL_API + chemin);
+    let reponse;
+
+    try {
+        reponse = await fetch(URL_API + chemin);
+    } catch (erreur) {
+        if (erreur instanceof TypeError) {
+            throw new Error("Impossible de joindre TVmaze : vérifiez votre connexion Internet.");
+        }
+
+        throw erreur;
+    }
 
     if (!reponse.ok) {
-        throw new Error(`TVmaze a répondu avec le code ${reponse.status}`);
+        throw new Error(messageErreurHTTP(reponse.status));
     }
 
     return reponse.json();
