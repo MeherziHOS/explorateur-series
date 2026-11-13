@@ -156,6 +156,7 @@ function ajouterInfo(liste, terme, valeur) {
 // Remplit et affiche la fiche détaillée d'une série
 export function afficherDetail(
     {
+        id,
         name: titre,
         genres,
         premiered,
@@ -168,6 +169,7 @@ export function afficherDetail(
         summary,
     },
     distribution,
+    favoris,
 ) {
     zoneDetail.replaceChildren();
 
@@ -231,12 +233,22 @@ export function afficherDetail(
 
     const actions = document.createElement("div");
     actions.className = "detail-actions";
+    const boutonFavori = document.createElement("button");
+    boutonFavori.type = "button";
+    boutonFavori.className = "bouton bouton-secondaire";
+    boutonFavori.dataset.action = "favori";
+    boutonFavori.dataset.id = id;
+    const dejaFavori = estFavori(favoris, id);
+
+    boutonFavori.textContent = dejaFavori ? "★ Retirer des favoris" : "☆ Ajouter aux favoris";
+
+    boutonFavori.setAttribute("aria-pressed", String(dejaFavori));
     const boutonFermer = document.createElement("button");
     boutonFermer.type = "button";
     boutonFermer.className = "bouton bouton-secondaire";
     boutonFermer.dataset.action = "fermer";
     boutonFermer.textContent = "Fermer la fiche";
-    actions.append(boutonFermer);
+    actions.append(boutonFavori, boutonFermer);
 
     texte.append(titreDetail, infos, resume, titreDistribution, listeRoles, actions);
     zoneDetail.append(texte);
@@ -277,4 +289,33 @@ export function afficherFavoris(favoris) {
         ligne.append(titre, bouton);
         zoneFavoris.append(ligne);
     });
+}
+export function rendu(state) {
+    const listeTriee = [...state.resultats];
+
+    if (state.tri === "titre") {
+        listeTriee.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    if (state.tri === "note") {
+        listeTriee.sort((a, b) => (b.rating?.average ?? 0) - (a.rating?.average ?? 0));
+    }
+
+    afficherSeries(listeTriee, state.favoris);
+    afficherFavoris(state.favoris);
+    marquerOccupe(state.chargement);
+
+    if (state.chargement) {
+        afficherChargement("Chargement en cours...");
+    } else if (state.erreur) {
+        afficherErreur(state.erreur);
+    } else if (state.terme === "") {
+        afficherMessage("Saisissez un titre de série pour commencer.");
+    }
+    if (state.detail) {
+        afficherDetail(state.detail.serie, state.detail.distribution, state.favoris);
+    } else {
+        zoneDetail.hidden = true;
+        zoneDetail.replaceChildren();
+    }
 }

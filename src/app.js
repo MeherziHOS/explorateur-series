@@ -7,6 +7,7 @@ import {
     afficherChargement,
     afficherErreur,
     marquerOccupe,
+    rendu,
 } from "./dom.js";
 import { rechercherSeries, chargerSerie, chargerDistribution } from "./api.js";
 import { initialiserEvenements } from "./events.js";
@@ -18,11 +19,23 @@ import {
     sauvegarderFavoris,
 } from "./favoris.js";
 
-// État de l'application
-const choixTri = document.querySelector("#choix-tri");
-
-let resultatsCourants = [];
-let favoris = chargerFavoris();
+// État centralisé de l'application
+let state = {
+    terme: "",
+    resultats: [],
+    tri: document.querySelector("#choix-tri").value,
+    chargement: false,
+    erreur: null,
+    detail: null,
+    favoris: chargerFavoris(),
+};
+function mettreAJourState(changements) {
+    state = {
+        ...state,
+        ...changements,
+    };
+    rendu(state);
+}
 
 // Journalisation des actions
 function journaliser(action, ...details) {
@@ -36,15 +49,53 @@ function trierSeries(liste, critere) {
     }
 
     if (critere === "note") {
-        return [...liste].sort((a, b) => (b.rating.average ?? 0) - (a.rating.average ?? 0));
+        return [...liste].sort((a, b) => (b.rating?.average ?? 0) - (a.rating?.average ?? 0));
     }
 
     return [...liste];
 }
+async function lancerRecherche(terme) {
+    const recherche = terme.trim();
 
-// Ouvrir la fiche détaillée d'une série
+    if (!recherche) {
+        mettreAJourState({
+            terme: "",
+            resultats: [],
+            erreur: null,
+            chargement: false,
+        });
+        return;
+    }
+
+    mettreAJourState({
+        terme: recherche,
+        chargement: true,
+        erreur: null,
+        resultats: [],
+    });
+
+    try {
+        const resultats = await rechercherSeries(recherche);
+
+        mettreAJourState({
+            resultats,
+            chargement: false,
+        });
+    } catch (erreur) {
+        mettreAJourState({
+            resultats: [],
+            erreur: erreur.message,
+            chargement: false,
+        });
+    }
+}
+
 async function ouvrirDetail(idSerie) {
-    afficherChargement("Chargement de la fiche...");
+    mettreAJourState({
+        chargement: true,
+        erreur: null,
+        detail: null,
+    });
 
     try {
         const [serie, distribution] = await Promise.all([
@@ -52,90 +103,67 @@ async function ouvrirDetail(idSerie) {
             chargerDistribution(idSerie),
         ]);
 
-        afficherMessage("");
-        afficherDetail(serie, distribution);
+        mettreAJourState({
+            detail: { serie, distribution },
+            chargement: false,
+        });
     } catch (erreur) {
-        afficherErreur(erreur.message);
-    } finally {
-        marquerOccupe(false);
+        mettreAJourState({
+            erreur: erreur.message,
+            chargement: false,
+        });
+    }
+}
+async function basculerFavori(idSerie) {
+    try {
+        const serie = await chargerSerie(idSerie);
+
+        const nouveauxFavoris = estFavori(state.favoris, idSerie)
+            ? retirerDesFavoris(state.favoris, idSerie)
+            : ajouterAuxFavoris(state.favoris, serie);
+
+        sauvegarderFavoris(nouveauxFavoris);
+
+        mettreAJourState({
+            favoris: nouveauxFavoris,
+        });
+
+        journaliser("Favoris mis à jour", serie.name);
+    } catch (erreur) {
+        mettreAJourState({
+            erreur: erreur.message,
+        });
     }
 }
 
 // Relier les événements aux fonctionnalités
 initialiserEvenements({
-    surRecherche: async (terme) => {
-        if (!terme.trim()) {
-            resultatsCourants = [];
-            afficherSeries([], favoris);
-            afficherMessage("Saisissez un titre de série pour commencer.");
-            return;
-        }
-        afficherChargement("Recherche en cours...");
-        marquerOccupe(true);
-
-        try {
-            const resultats = await rechercherSeries(terme);
-
-            resultatsCourants = resultats;
-
-            afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
-
-            afficherMessage("");
-            journaliser("Recherche effectuée", terme);
-        } catch (erreur) {
-            resultatsCourants = [];
-            afficherSeries([], favoris);
-            afficherErreur(erreur.message);
-        } finally {
-            marquerOccupe(false);
-        }
+    surRecherche: (terme) => {
+        lancerRecherche(terme);
     },
 
     surTri: (critere) => {
-        const listeTriee = trierSeries(resultatsCourants, critere);
-        afficherSeries(listeTriee, favoris);
-        journaliser("Tri effectué", critere);
+        mettreAJourState({ tri: critere });
     },
 
     surDetail: (idSerie) => {
         ouvrirDetail(idSerie);
     },
 
-    surFavori: async (idSerie) => {
-        try {
-            const serie = await chargerSerie(idSerie);
-
-            if (estFavori(favoris, idSerie)) {
-                favoris = retirerDesFavoris(favoris, idSerie);
-                journaliser("Favori retiré", serie.name);
-            } else {
-                favoris = ajouterAuxFavoris(favoris, serie);
-                journaliser("Favori ajouté", serie.name);
-            }
-            sauvegarderFavoris(favoris);
-
-            afficherSeries(trierSeries(resultatsCourants, choixTri.value), favoris);
-
-            afficherFavoris(favoris);
-        } catch (erreur) {
-            afficherErreur(erreur.message);
-        }
+    surFavori: (idSerie) => {
+        basculerFavori(idSerie);
     },
 
     surFermer: () => {
+        mettreAJourState({ detail: null });
         fermerDetail();
     },
 });
-
 // Affichage initial
 function initialiserApplication() {
-    resultatsCourants = [];
-
-    afficherSeries([], favoris);
-    afficherFavoris(favoris);
-
-    afficherMessage("Saisissez un titre de série pour commencer.");
-    marquerOccupe(false);
+    rendu(state);
 }
+
+initialiserApplication();
 
 initialiserApplication();

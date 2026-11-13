@@ -54,8 +54,18 @@ export function initialiserEvenements({ surRecherche, surTri, surDetail, surFavo
     const zoneDetail = document.querySelector("#zone-detail");
 
     zoneDetail.addEventListener("click", (event) => {
-        if (event.target.closest('[data-action="fermer"]')) {
+        const bouton = event.target.closest("button[data-action]");
+
+        if (!bouton) {
+            return;
+        }
+
+        if (bouton.dataset.action === "fermer") {
             surFermer();
+        }
+
+        if (bouton.dataset.action === "favori") {
+            surFavori(Number(bouton.dataset.id));
         }
     });
 }
